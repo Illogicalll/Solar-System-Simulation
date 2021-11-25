@@ -11,6 +11,8 @@ global planets
 global number
 global planetobjects
 global modechoice
+global currenttrack
+currenttrack = 'planetsun'
 number = 0
 planets = {}
 planetobjects = []
@@ -18,23 +20,17 @@ modechoice = 0
 
 # Creating the planets for the 'regular' solar system mode
 def initializeSolarSystem():
-    print("real")
-    """
-    # Possible syntax?
-    sun = Planet("sun",posx=0,posy=0,posz=0,radius=0.695,colour=0,mass=1000,m1=0,m2=0,m3=4000)
-    mercury = Planet("mercury",posx=5.8,posy=0,posz=0,radius=0.00244,colour=1,mass=1,m1=0,m2=90,m3=0)
-    """
     global planetobjects
-    sun = Planet("sun",0,0,0,0.2,0, 1000, 0,0,4000)
-    mercury = Planet("mercury",1,0,0,0.05,1, 1,0,30,0)
-    venus = Planet("venus",0,3,0,0.075,1, 2,-35,0,0)
-    earth = Planet("earth", 0,-4,0,0.1, 2, 10, 160, 0, 0)
-    mars = Planet("mars", 0, 5.7, 0, 0.08, 1, 15, -190, 0, 0)
-    jupiter = Planet("jupiter", 0,-8, 0, 0.1, 1, 100, 300, 0 ,0)
-    saturn = Planet("saturn", 0,-13, 0, 0.13, 1, 100, 400, 0 ,0)
-    uranus = Planet("uranus", 0,-15, 0, 0.08, 1, 80, 600, 0 ,0)
-    neptune = Planet("neptune", 0,-17, 0, 0.06, 1, 50, 800, 0 ,0)
-    planetobjects = [sun, mercury, venus, earth, mars, jupiter, saturn, uranus, neptune]
+    sun = Planet("sun",0,0,0,0.15,0,333, 0,0,1000)
+    mercury = Planet("mercury",0.387,0,0,0.009,1, 0.0553,0,1.59,0)
+    venus = Planet("venus",0.723,0,0,0.025,1, 0.815,0,17.7,0)
+    earth = Planet("earth", 1.2,0,0,0.034, 2, 1, 0, 17.1, 0)
+    mars = Planet("mars", 1.52, 0, 0, 0.028, 1, 0.107, 0, 1.629, 0)
+    jupiter = Planet("jupiter", 5, 0, 0, 0.1, 1, 10.8, 0, 87 ,0)
+    # saturn = Planet("saturn", 0,-13, 0, 0.13, 1, 95.2, 400, 0 ,0)
+    # uranus = Planet("uranus", 0,-15, 0, 0.08, 1, 14.5, 600, 0 ,0)
+    # neptune = Planet("neptune", 0,-17, 0, 0.06, 1, 17.1, 800, 0 ,0)
+    planetobjects = [sun, mercury, venus, earth, mars, jupiter]
     # Setting up the camera so that it follows the sun
     # through space instead of staying focussed on (0,0,0)
     scene.camera.follow(planets["planetsun"])
@@ -101,7 +97,7 @@ class Planet(object):
         self.force = vector(0,0,0)
         planets["planet{0}".format(name)] = sphere(pos=self.position, radius=self.radius, 
                                                    color = self.colour, momentum = self.momentum, 
-                                                   mass = self.mass, make_trail = True, retain = 100)
+                                                   mass = self.mass, make_trail = True, retain = 1000)
         
     def getMass(self):
         return planets[f"planet{self.name}"].mass
@@ -130,7 +126,6 @@ class Planet(object):
 # The gravitational force equation, takes in two planet objects and returns the
 # resultant force vector, taking into account the planet's mass and position
 def orbitcalc(planet1, planet2):
-    # GRAV = 6.67 * math.pow(10,-11)
     GRAV = 1
     rvec = planet1.getPos() - planet2.getPos()
     rmag = mag(rvec)
@@ -139,27 +134,21 @@ def orbitcalc(planet1, planet2):
     forcevec = -forcemag*rhat
     return forcevec
 
-""" 
 #                   CAMERA TRACK SWITCHING SYSTEM (DOESNT WORK)
-# planetnames = list(planets.keys())
-# index = 0
-# def changetrack(currenttrack):
-#     for i, value in enumerate(planetnames):
-#         if value == currenttrack:
-#             index = i
-#     try:
-#         scene.camera.follow(planets[planetnames[index+1]])
-#     except IndexError:
-#         pass
-# currenttrack = "planetsun"
-# scene.camera.follow(planets[currenttrack])
-# scene.bind('click keydown', changetrack(currenttrack)) 
- """
+def changetrack():
+    global planets
+    global currenttrack
+    nexttrack = ''
+    temp = list(planets.keys())
+    for planet in temp:
+        if currenttrack == planet:
+            nexttrack = temp.index(planet)+1
+    scene.camera.follow(planets[temp[nexttrack]])
 
 # These 3 methods utilize an iterative approach to the physics equations
 # behind the simulation in order to save many lines of repetetive code in the
 # while loop found below.
-dt = 0
+dt = 0.00001
 def calcForces(planetobjects):
     planetforce = vector(0,0,0)
     for planet in planetobjects:
@@ -173,21 +162,29 @@ def calcForces(planetobjects):
         
 def updateMomenta(planetobjects):
     for planet in planetobjects:
-        planet.updateMomentum(planet.getForce()*dt)
+        if planet.getName() == 'sun':
+            pass
+        else:
+            planet.updateMomentum(planet.getForce()*dt)
         
 def updatePositions(planetobjects):
     for planet in planetobjects:
-        planet.updatePos(planet.getMomentum()/planet.getMass()*dt)
+        if planet.getName() == 'sun':
+            pass
+        else:
+            planet.updatePos(planet.getMomentum()/planet.getMass()*dt)
 
 
 # The main loop that calls the above methods in order and therefore drives the simulation.
 # the speed of the simulation can be adjusted within the rate() function. A higher value
 # equates to a higher simulation speed.
 def simulate():
+    global currenttrack
+    button(text='Switch Camera Track', pos=scene.title_anchor, bind=changetrack)
     dt = 0.0001
     t = 0
     while True:
-        rate(1000)
+        rate(10000)
         calcForces(planetobjects)
         updateMomenta(planetobjects)
         updatePositions(planetobjects)
