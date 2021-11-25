@@ -1,6 +1,6 @@
 # Importing necessary libraries
 from vpython import *
-import math
+import numpy as np
 from ttkbootstrap import Style
 import tkinter as tk
 from tkinter import ttk
@@ -11,12 +11,15 @@ global planets
 global number
 global planetobjects
 global modechoice
+global galaxy
 global currenttrack
-currenttrack = 'planetsun'
+scene.autoscale = False
+galaxy = sphere(pos=vector(0,0,0), radius = 25, texture='https://i.imgur.com/2YLRldk.png', shininess = 0)
 number = 0
 planets = {}
 planetobjects = []
 modechoice = 0
+currenttrack = ''
 
 # Creating the planets for the 'regular' solar system mode
 def initializeSolarSystem():
@@ -25,12 +28,12 @@ def initializeSolarSystem():
     mercury = Planet("mercury",0.387,0,0,0.009,1, 0.0553,0,1.59,0)
     venus = Planet("venus",0.723,0,0,0.025,1, 0.815,0,17.7,0)
     earth = Planet("earth", 1.2,0,0,0.034, 2, 1, 0, 17.1, 0)
-    mars = Planet("mars", 1.52, 0, 0, 0.028, 1, 0.107, 0, 1.629, 0)
-    jupiter = Planet("jupiter", 5, 0, 0, 0.1, 1, 10.8, 0, 87 ,0)
-    # saturn = Planet("saturn", 0,-13, 0, 0.13, 1, 95.2, 400, 0 ,0)
-    # uranus = Planet("uranus", 0,-15, 0, 0.08, 1, 14.5, 600, 0 ,0)
-    # neptune = Planet("neptune", 0,-17, 0, 0.06, 1, 17.1, 800, 0 ,0)
-    planetobjects = [sun, mercury, venus, earth, mars, jupiter]
+    mars = Planet("mars", 1.62, 0, 0, 0.028, 1, 0.8, 0, 11.6853, 0)
+    jupiter = Planet("jupiter", 5, 0, 0, 0.07, 1, 10.4, 0, 87 ,0)
+    saturn = Planet("saturn", 8.2,0,0, 0.07, 1, 10, 0, 60 ,0)
+    uranus = Planet("uranus", 14, 0, 0, 0.05, 1, 1, 0, 5 ,0)
+    neptune = Planet("neptune", 21, 0, 0, 0.04, 1, 1.3, 0, 5.5 ,0)
+    planetobjects = [sun, mercury, venus, earth, mars, jupiter, saturn, uranus, neptune]
     # Setting up the camera so that it follows the sun
     # through space instead of staying focussed on (0,0,0)
     scene.camera.follow(planets["planetsun"])
@@ -97,7 +100,7 @@ class Planet(object):
         self.force = vector(0,0,0)
         planets["planet{0}".format(name)] = sphere(pos=self.position, radius=self.radius, 
                                                    color = self.colour, momentum = self.momentum, 
-                                                   mass = self.mass, make_trail = True, retain = 1000)
+                                                   mass = self.mass, make_trail = True, retain = 20)
         
     def getMass(self):
         return planets[f"planet{self.name}"].mass
@@ -122,9 +125,30 @@ class Planet(object):
     
     def getName(self):
         return self.name
-     
+
+# This method continously checks the distance of the camera from the center of
+# whatever the camera is currently tracking. It then uses this information to 
+# scale large sphere with the stars texture on it. The purpose of this process 
+# is to combat the naturally occuring problem that arises when zooming too far 
+# into a sphere (View becomes obstructed by a black sphere that isn't actually 
+# there).
+def cameracheck():
+    global planetobjects
+    center = vector(0,0,0)
+    currenttrack.strip('planet')
+    print(currenttrack)
+    for planet in planetobjects:
+        print(planet)
+        if currenttrack == planet:
+            center = planet.position
+            galaxy.position = planet.position
+    zoomA = mag(center - scene.camera.pos)
+    zoomB = mag(center - scene.camera.pos) + 2
+    for item in np.linspace(zoomA, zoomB, num=40):              # The use of numpy's linspace feature
+        galaxy.radius = item                                    # allows for smoothed radius adjustment
+ 
 # The gravitational force equation, takes in two planet objects and returns the
-# resultant force vector, taking into account the planet's mass and position
+# resultant force vector, taking into  Taccount the planet's mass and position
 def orbitcalc(planet1, planet2):
     GRAV = 1
     rvec = planet1.getPos() - planet2.getPos()
@@ -134,16 +158,17 @@ def orbitcalc(planet1, planet2):
     forcevec = -forcemag*rhat
     return forcevec
 
-#                   CAMERA TRACK SWITCHING SYSTEM (DOESNT WORK)
-def changetrack():
+# The method called by the drop down menu created in the simulate() function
+# below. This method matches the user's selected planet with a list of the
+# planet objects and selects the correct planet to attatch the camera to.
+def changetrack(m):
     global planets
     global currenttrack
-    nexttrack = ''
     temp = list(planets.keys())
-    for planet in temp:
-        if currenttrack == planet:
-            nexttrack = temp.index(planet)+1
-    scene.camera.follow(planets[temp[nexttrack]])
+    for i in range (len(planets)):
+        if i == m.index:
+            currenttrack = str(temp[i])
+            scene.camera.follow(planets[temp[i]])
 
 # These 3 methods utilize an iterative approach to the physics equations
 # behind the simulation in order to save many lines of repetetive code in the
@@ -179,12 +204,19 @@ def updatePositions(planetobjects):
 # the speed of the simulation can be adjusted within the rate() function. A higher value
 # equates to a higher simulation speed.
 def simulate():
-    global currenttrack
-    button(text='Switch Camera Track', pos=scene.title_anchor, bind=changetrack)
+    global planetobjects
+    names = []
+    for planet in planetobjects: 
+        names.append(planet.getName().capitalize())
+    menu(choices = names, pos = scene.title_anchor, bind=changetrack)
     dt = 0.0001
     t = 0
+    count = 0
     while True:
-        rate(10000)
+        rate(5000)
+        count += 1
+        if count % 13 == 0:
+            cameracheck()
         calcForces(planetobjects)
         updateMomenta(planetobjects)
         updatePositions(planetobjects)
@@ -201,12 +233,10 @@ def main():
 main()
 
 """ 
-# Notes:
-# - Finish camera tracking switch system
-# - Add remaining planets
-#    - Fix orbits? Make them look more realistic
+# Notes/Targets:
+# - Add giant sphere as stars
+# - Fix orbits? Make them look more realistic
 # - Replace basic colours with functional textures:
 #    - earth = textures.earth
 #    - moon = moontexture = 'https://thumbs.dreamstime.com/b/moon-surface-seamless-texture-background-closeup-moon-surface-texture-188679621.jpg'
-# - Make GUI close after selecting an option
  """
