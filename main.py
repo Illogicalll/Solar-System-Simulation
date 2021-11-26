@@ -133,15 +133,12 @@ class Planet(object):
 # into a sphere (View becomes obstructed by a black sphere that isn't actually 
 # there).
 def cameracheck():
-    global planetobjects
+    global planets
     center = vector(0,0,0)
-    currenttrack.strip('planet')
-    print(currenttrack)
-    for planet in planetobjects:
-        print(planet)
+    for planet in planets:
         if currenttrack == planet:
-            center = planet.position
-            galaxy.position = planet.position
+            center = vector(planets[planet].pos)
+            galaxy.pos = vector(planets[planet].pos)
     zoomA = mag(center - scene.camera.pos)
     zoomB = mag(center - scene.camera.pos) + 2
     for item in np.linspace(zoomA, zoomB, num=40):              # The use of numpy's linspace feature
@@ -167,7 +164,7 @@ def changetrack(m):
     temp = list(planets.keys())
     for i in range (len(planets)):
         if i == m.index:
-            currenttrack = str(temp[i])
+            currenttrack = temp[i]
             scene.camera.follow(planets[temp[i]])
 
 # These 3 methods utilize an iterative approach to the physics equations
