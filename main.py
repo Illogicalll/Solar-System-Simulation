@@ -14,6 +14,8 @@ global modechoice
 global galaxy
 global currenttrack
 scene.autoscale = False
+scene.width = '1280'
+scene.height = '720'
 galaxy = sphere(pos=vector(0,0,0), radius = 25, texture='https://i.imgur.com/2YLRldk.png', shininess = 0)
 number = 0
 planets = {}
@@ -24,15 +26,15 @@ currenttrack = ''
 # Creating the planets for the 'regular' solar system mode
 def initializeSolarSystem():
     global planetobjects
-    sun = Planet("sun",0,0,0,0.15,0,333, 0,0,1000)
-    mercury = Planet("mercury",0.387,0,0,0.009,1, 0.0553,0,1.59,0)
-    venus = Planet("venus",0.723,0,0,0.025,1, 0.815,0,17.7,0)
-    earth = Planet("earth", 1.2,0,0,0.034, 2, 1, 0, 17.1, 0)
-    mars = Planet("mars", 1.62, 0, 0, 0.028, 1, 0.8, 0, 11.6853, 0)
-    jupiter = Planet("jupiter", 5, 0, 0, 0.07, 1, 10.4, 0, 87 ,0)
-    saturn = Planet("saturn", 8.2,0,0, 0.07, 1, 10, 0, 60 ,0)
-    uranus = Planet("uranus", 14, 0, 0, 0.05, 1, 1, 0, 5 ,0)
-    neptune = Planet("neptune", 21, 0, 0, 0.04, 1, 1.3, 0, 5.5 ,0)
+    sun = Planet("sun",0,0,0,0.15, 0 ,333,0,0,1000)
+    mercury = Planet("mercury",0.387,0,0,0.009, 1 ,0.0553,0,1.59,0)
+    venus = Planet("venus",0.723,0,0,0.025, 2 ,0.815,0,17.7,0)
+    earth = Planet("earth",1.2,0,0,0.034, 3 ,1,0,17.1,0)
+    mars = Planet("mars",1.62,0,0,0.028, 4 ,0.8,0,11.6853,0)
+    jupiter = Planet("jupiter",5,0,0,0.07, 5 ,10.4,0,87,0)
+    saturn = Planet("saturn",8.2,0,0,0.07, 6 ,10,0,60,0)
+    uranus = Planet("uranus",14,0,0,0.05, 7 ,1,0,5,0)
+    neptune = Planet("neptune",21,0,0,0.04, 8 ,1.3, 0,5.5,0)
     planetobjects = [sun, mercury, venus, earth, mars, jupiter, saturn, uranus, neptune]
     # Setting up the camera so that it follows the sun
     # through space instead of staying focussed on (0,0,0)
@@ -85,22 +87,25 @@ def welcome():
 # position to mass to momentum that the user can modify
 class Planet(object):
     # Laying out the foundations
-    def __init__(self,name, posx, posy, posz, radius, colour, mass, m1, m2, m3):
+    def __init__(self,name, posx, posy, posz, radius, texturenum, mass, m1, m2, m3):
         global planets
         global number
         number += 1
-        colours = [color.yellow, color.red, color.blue]
+        textures = ['https://i.imgur.com/yuVrjef.jpg', 'https://i.imgur.com/Y9KABlp.png', 'https://i.imgur.com/MFGRSTV.jpg', 
+                    'https://i.imgur.com/Klu4RHH.jpg', 'https://i.imgur.com/6OWHL0V.jpg', 'https://i.imgur.com/z0QGLr4.jpg', 
+                    'https://i.imgur.com/ayz5Vrc.jpg', 'https://i.imgur.com/kin15B0.jpg', 'https://i.imgur.com/LvfbPVm.jpg']
         self.name = name
         self.posx, self.posy, self.posz = posx, posy, posz
         self.position = vector(posx,posy,posz)
         self.radius = radius
-        self.colour = colours[colour]
+        self.texture = textures[texturenum]
         self.mass = mass
         self.momentum = vector(m1,m2,m3)
         self.force = vector(0,0,0)
+        # self.retainmultiplier = texturenum
         planets["planet{0}".format(name)] = sphere(pos=self.position, radius=self.radius, 
-                                                   color = self.colour, momentum = self.momentum, 
-                                                   mass = self.mass, make_trail = True, retain = 20)
+                                                   texture = self.texture, momentum = self.momentum, 
+                                                   mass = self.mass, make_trail = False, retain = 20)
         
     def getMass(self):
         return planets[f"planet{self.name}"].mass
@@ -234,6 +239,15 @@ main()
 # - Add giant sphere as stars
 # - Fix orbits? Make them look more realistic
 # - Replace basic colours with functional textures:
-#    - earth = textures.earth
-#    - moon = moontexture = 'https://thumbs.dreamstime.com/b/moon-surface-seamless-texture-background-closeup-moon-surface-texture-188679621.jpg'
+#    - earth = https://i.imgur.com/Klu4RHH.jpg
+#    - moon = 'https://i.imgur.com/ux1dfdt.png'
+#    - venus = https://i.imgur.com/MFGRSTV.jpg
+#    - mercury = https://i.imgur.com/Y9KABlp.png
+#    - mars = https://i.imgur.com/6OWHL0V.jpg
+#    - jupiter = https://i.imgur.com/z0QGLr4.jpg
+#    - saturn = https://i.imgur.com/ayz5Vrc.jpg
+#    - saturn rings? = https://i.imgur.com/W5NCuMX.png
+#    - uranus = https://i.imgur.com/kin15B0.jpg
+#    - neptune = https://i.imgur.com/LvfbPVm.jpg
+#    - sun = https://i.imgur.com/yuVrjef.jpg
  """
