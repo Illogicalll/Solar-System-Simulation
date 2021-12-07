@@ -8,7 +8,6 @@ from tkinter import ttk
 # These globals will be important in order to create a dictionary containing
 # all the planet objects
 global planets
-global number
 global planetobjects
 global modechoice
 global galaxy
@@ -17,7 +16,6 @@ scene.autoscale = False
 scene.width = '1280'
 scene.height = '720'
 galaxy = sphere(pos=vector(0,0,0), radius = 25, texture='https://i.imgur.com/2YLRldk.png', shininess = 0)
-number = 0
 planets = {}
 planetobjects = []
 modechoice = 0
@@ -31,8 +29,16 @@ def initializeSolarSystem():
     venus = Planet("venus",0.723,0,0,0.025, 2 ,0.815,0,17.7,0)
     earth = Planet("earth",1.2,0,0,0.034, 3 ,1,0,17.1,0)
     mars = Planet("mars",1.62,0,0,0.028, 4 ,0.8,0,11.6853,0)
-    jupiter = Planet("jupiter",5,0,0,0.07, 5 ,10.4,0,87,0)
-    saturn = Planet("saturn",8.2,0,0,0.07, 6 ,10,0,60,0)
+    jupiter = Planet("jupiter",5,0,0,0.04, 5 ,10.4,0,87,0)
+    thick = 0.001
+    rad = 0.15
+    saturn = []
+    #saturnbody = Planet("saturn",8.2,0,0,0.07, 6 ,10,0,60,0)
+    saturnbody = sphere(pos=vector(0,0,0), radius=0.08, color = vector(0.6902,0.56078,0.21176))
+    saturn.append(saturnbody)
+    for i in range(1,45):
+        saturn.append(ring(pos=vector(0,0,0), axis=vector(0,1,0), radius = rad-(0.001*i), thickness = thick, color = vector(0.6902,0.56078,0.21176)))
+    saturn = compoundPlanet("saturn",8.2,0,0,saturn,10,0,60,0, 0)
     uranus = Planet("uranus",14,0,0,0.05, 7 ,1,0,5,0)
     neptune = Planet("neptune",21,0,0,0.04, 8 ,1.3, 0,5.5,0)
     planetobjects = [sun, mercury, venus, earth, mars, jupiter, saturn, uranus, neptune]
@@ -89,8 +95,6 @@ class Planet(object):
     # Laying out the foundations
     def __init__(self,name, posx, posy, posz, radius, texturenum, mass, m1, m2, m3):
         global planets
-        global number
-        number += 1
         textures = ['https://i.imgur.com/yuVrjef.jpg', 'https://i.imgur.com/Y9KABlp.png', 'https://i.imgur.com/MFGRSTV.jpg', 
                     'https://i.imgur.com/Klu4RHH.jpg', 'https://i.imgur.com/6OWHL0V.jpg', 'https://i.imgur.com/z0QGLr4.jpg', 
                     'https://i.imgur.com/ayz5Vrc.jpg', 'https://i.imgur.com/kin15B0.jpg', 'https://i.imgur.com/LvfbPVm.jpg']
@@ -102,10 +106,9 @@ class Planet(object):
         self.mass = mass
         self.momentum = vector(m1,m2,m3)
         self.force = vector(0,0,0)
-        # self.retainmultiplier = texturenum
         planets["planet{0}".format(name)] = sphere(pos=self.position, radius=self.radius, 
                                                    texture = self.texture, momentum = self.momentum, 
-                                                   mass = self.mass, make_trail = False, retain = 20)
+                                                   mass = self.mass, make_trail = False, retain = 100)
         
     def getMass(self):
         return planets[f"planet{self.name}"].mass
@@ -130,6 +133,22 @@ class Planet(object):
     
     def getName(self):
         return self.name
+    
+    
+class compoundPlanet(Planet):
+    def __init__(self,name, posx, posy, posz, objects, mass, m1, m2, m3, texture):
+        textures = ['https://i.imgur.com/ayz5Vrc.jpg']
+        self.name = name
+        self.posx, self.posy, self.posz = posx, posy, posz
+        self.position = vector(posx,posy,posz)
+        self.mass = mass
+        self.momentum = vector(m1,m2,m3)
+        self.force = vector(0,0,0)
+        self.objects = objects
+        self.texutre = textures[texture]
+        planets["planet{0}".format(name)] = compound(self.objects, pos=self.position, momentum = self.momentum, 
+                                                     mass = self.mass, make_trail = False, retain = 100)
+        
 
 # This method continously checks the distance of the camera from the center of
 # whatever the camera is currently tracking. It then uses this information to 
@@ -150,7 +169,7 @@ def cameracheck():
         galaxy.radius = item                                    # allows for smoothed radius adjustment
  
 # The gravitational force equation, takes in two planet objects and returns the
-# resultant force vector, taking into  Taccount the planet's mass and position
+# resultant force vector, taking into account the planet's mass and position
 def orbitcalc(planet1, planet2):
     GRAV = 1
     rvec = planet1.getPos() - planet2.getPos()
@@ -236,18 +255,17 @@ main()
 
 """ 
 # Notes/Targets:
-# - Add giant sphere as stars
+# - Implement moons
+# - Make planets spin
+# - Zoom speed limit?
 # - Fix orbits? Make them look more realistic
 # - Replace basic colours with functional textures:
-#    - earth = https://i.imgur.com/Klu4RHH.jpg
-#    - moon = 'https://i.imgur.com/ux1dfdt.png'
-#    - venus = https://i.imgur.com/MFGRSTV.jpg
-#    - mercury = https://i.imgur.com/Y9KABlp.png
-#    - mars = https://i.imgur.com/6OWHL0V.jpg
-#    - jupiter = https://i.imgur.com/z0QGLr4.jpg
-#    - saturn = https://i.imgur.com/ayz5Vrc.jpg
+#    - moon = https://i.imgur.com/ux1dfdt.png
 #    - saturn rings? = https://i.imgur.com/W5NCuMX.png
-#    - uranus = https://i.imgur.com/kin15B0.jpg
-#    - neptune = https://i.imgur.com/LvfbPVm.jpg
-#    - sun = https://i.imgur.com/yuVrjef.jpg
+# - Reapply saturn textures somehow
+# - Gravity and planet mass sliders
+# - Planet placing system
+# - Planet deletion system
+# - Start simulation button
+# - Information system
  """
