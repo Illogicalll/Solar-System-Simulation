@@ -4,6 +4,7 @@ import numpy as np
 from ttkbootstrap import Style
 import tkinter as tk
 from tkinter import ttk
+import random as r
 
 # These globals will be important in order to create a dictionary containing
 # all the planet objects
@@ -32,12 +33,20 @@ def initializeSolarSystem():
     jupiter = Planet("jupiter",5,0,0,0.04, 5 ,10.4,0,87,0)
     thick = 0.001
     rad = 0.15
+    twopac = 0.1
     saturn = []
-    #saturnbody = Planet("saturn",8.2,0,0,0.07, 6 ,10,0,60,0)
-    saturnbody = sphere(pos=vector(0,0,0), radius=0.08, color = vector(0.6902,0.56078,0.21176))
+    saturnbody = sphere(pos=vector(0,0,0), radius=0.08)
     saturn.append(saturnbody)
-    for i in range(1,45):
-        saturn.append(ring(pos=vector(0,0,0), axis=vector(0,1,0), radius = rad-(0.001*i), thickness = thick, color = vector(0.6902,0.56078,0.21176)))
+    inner = False
+    for i in range(1,35):
+        if i == 15:
+            rad -= 0.01
+            twopac = 0.2
+            inner = True
+        if inner == False:
+            saturn.append(ring(pos=vector(0,0,0), axis=vector(0.4,1,0), radius = rad-(r.uniform(0.001, 0.002)*i), thickness = thick, opacity = twopac))
+        elif inner == True:
+            saturn.append(ring(pos=vector(0,0,0), axis=vector(0.4,1,0), radius = rad-(r.uniform(0.001, 0.0015)*i), thickness = thick, opacity = twopac))
     saturn = compoundPlanet("saturn",8.2,0,0,saturn,10,0,60,0, 0)
     uranus = Planet("uranus",14,0,0,0.05, 7 ,1,0,5,0)
     neptune = Planet("neptune",21,0,0,0.04, 8 ,1.3, 0,5.5,0)
@@ -145,9 +154,9 @@ class compoundPlanet(Planet):
         self.momentum = vector(m1,m2,m3)
         self.force = vector(0,0,0)
         self.objects = objects
-        self.texutre = textures[texture]
+        self.texture = textures[texture]
         planets["planet{0}".format(name)] = compound(self.objects, pos=self.position, momentum = self.momentum, 
-                                                     mass = self.mass, make_trail = False, retain = 100)
+                                                     mass = self.mass, texture=self.texture, make_trail = False, retain = 100)
         
 
 # This method continously checks the distance of the camera from the center of
@@ -261,8 +270,6 @@ main()
 # - Fix orbits? Make them look more realistic
 # - Replace basic colours with functional textures:
 #    - moon = https://i.imgur.com/ux1dfdt.png
-#    - saturn rings? = https://i.imgur.com/W5NCuMX.png
-# - Reapply saturn textures somehow
 # - Gravity and planet mass sliders
 # - Planet placing system
 # - Planet deletion system
