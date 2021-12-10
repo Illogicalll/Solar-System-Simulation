@@ -25,12 +25,12 @@ currenttrack = ''
 # Creating the planets for the 'regular' solar system mode
 def initializeSolarSystem():
     global planetobjects
-    sun = Planet("sun",0,0,0,0.15, 0 ,333,0,0,1000)
-    mercury = Planet("mercury",0.387,0,0,0.009, 1 ,0.0553,0,1.59,0)
-    venus = Planet("venus",0.723,0,0,0.025, 2 ,0.815,0,17.7,0)
-    earth = Planet("earth",1.2,0,0,0.034, 3 ,1,0,17.1,0)
-    mars = Planet("mars",1.62,0,0,0.028, 4 ,0.8,0,11.6853,0)
-    jupiter = Planet("jupiter",5,0,0,0.04, 5 ,10.4,0,87,0)
+    sun = Planet("sun",0,0,0,0.15, 0 ,333,0,0,1000, True)
+    mercury = Planet("mercury",0,0,0.387,0.009, 1 ,0.0553,1.59,0,0, False)
+    venus = Planet("venus",0,0,0.723,0.025, 2 ,0.815,17.7,0,0, False)
+    earth = Planet("earth",0,0,1.2,0.034, 3 ,1,17.1,0,0, False)
+    mars = Planet("mars",0,0,1.62,0.028, 4 ,0.8,11.6853,0,0, False)
+    jupiter = Planet("jupiter",0,0,5,0.04, 5 ,10.4,87,0,0, False)
     thick = 0.001
     rad = 0.15
     twopac = 0.1
@@ -47,13 +47,15 @@ def initializeSolarSystem():
             saturn.append(ring(pos=vector(0,0,0), axis=vector(0.4,1,0), radius = rad-(r.uniform(0.001, 0.002)*i), thickness = thick, opacity = twopac))
         elif inner == True:
             saturn.append(ring(pos=vector(0,0,0), axis=vector(0.4,1,0), radius = rad-(r.uniform(0.001, 0.0015)*i), thickness = thick, opacity = twopac))
-    saturn = compoundPlanet("saturn",8.2,0,0,saturn,10,0,60,0, 0)
-    uranus = Planet("uranus",14,0,0,0.05, 7 ,1,0,5,0)
-    neptune = Planet("neptune",21,0,0,0.04, 8 ,1.3, 0,5.5,0)
+    saturn = compoundPlanet("saturn",0,0,8.2,saturn,10,60,0,0, 0, False)
+    uranus = Planet("uranus",0,0,14,0.05, 7 ,1,5,0,0, False)
+    neptune = Planet("neptune",0,0,21,0.04, 8 ,1.3, 5.5,0,0, False)
     planetobjects = [sun, mercury, venus, earth, mars, jupiter, saturn, uranus, neptune]
     # Setting up the camera so that it follows the sun
     # through space instead of staying focussed on (0,0,0)
     scene.camera.follow(planets["planetsun"])
+    scene.lights = []
+    local_light(pos=vector(0,0,0))
  
 # Creating the environment suitable for the 'sandbox' mode   
 def initializeSandbox():
@@ -102,7 +104,7 @@ def welcome():
 # position to mass to momentum that the user can modify
 class Planet(object):
     # Laying out the foundations
-    def __init__(self,name, posx, posy, posz, radius, texturenum, mass, m1, m2, m3):
+    def __init__(self,name, posx, posy, posz, radius, texturenum, mass, m1, m2, m3, emissive):
         global planets
         textures = ['https://i.imgur.com/yuVrjef.jpg', 'https://i.imgur.com/Y9KABlp.png', 'https://i.imgur.com/MFGRSTV.jpg', 
                     'https://i.imgur.com/Klu4RHH.jpg', 'https://i.imgur.com/6OWHL0V.jpg', 'https://i.imgur.com/z0QGLr4.jpg', 
@@ -115,9 +117,10 @@ class Planet(object):
         self.mass = mass
         self.momentum = vector(m1,m2,m3)
         self.force = vector(0,0,0)
+        self.emissive = emissive
         planets["planet{0}".format(name)] = sphere(pos=self.position, radius=self.radius, 
                                                    texture = self.texture, momentum = self.momentum, 
-                                                   mass = self.mass, make_trail = False, retain = 100)
+                                                   mass = self.mass, make_trail = False, retain = 1000, emissive = self.emissive)
         
     def getMass(self):
         return planets[f"planet{self.name}"].mass
@@ -127,6 +130,9 @@ class Planet(object):
     
     def updatePos(self, newpos):
         planets[f"planet{self.name}"].pos += newpos
+        
+    def getRadius(self):
+        return self.radius
     
     def setForce(self, newforce):                      # These methods will be used later as a gateway into the class in order
         self.force = newforce                          # to update values that affect the orbits of the individual planets
@@ -145,7 +151,7 @@ class Planet(object):
     
     
 class compoundPlanet(Planet):
-    def __init__(self,name, posx, posy, posz, objects, mass, m1, m2, m3, texture):
+    def __init__(self,name, posx, posy, posz, objects, mass, m1, m2, m3, texture, emissive):
         textures = ['https://i.imgur.com/ayz5Vrc.jpg']
         self.name = name
         self.posx, self.posy, self.posz = posx, posy, posz
@@ -155,8 +161,12 @@ class compoundPlanet(Planet):
         self.force = vector(0,0,0)
         self.objects = objects
         self.texture = textures[texture]
+        self.emissive = emissive
         planets["planet{0}".format(name)] = compound(self.objects, pos=self.position, momentum = self.momentum, 
-                                                     mass = self.mass, texture=self.texture, make_trail = False, retain = 100)
+                                                     mass = self.mass, texture=self.texture, make_trail = False, retain = 1000, emissive = self.emissive)
+        
+    def getRadius(self):
+        return 1
         
 
 # This method continously checks the distance of the camera from the center of
@@ -200,6 +210,13 @@ def changetrack(m):
             currenttrack = temp[i]
             scene.camera.follow(planets[temp[i]])
 
+# This handles the spinning animation of all planets, it takes into account the radius
+# of the planet and spins it at an appropriate speed respective to that.            
+def planetRotate(planets, planetobjects):
+    temp = list(planets.keys())
+    for i in range (len(planets)):
+        planets[temp[i]].rotate(angle=0.0006/((planetobjects[i].getRadius())), axis=vector(0,1,0))
+
 # These 3 methods utilize an iterative approach to the physics equations
 # behind the simulation in order to save many lines of repetetive code in the
 # while loop found below.
@@ -235,6 +252,7 @@ def updatePositions(planetobjects):
 # equates to a higher simulation speed.
 def simulate():
     global planetobjects
+    global planets
     names = []
     for planet in planetobjects: 
         names.append(planet.getName().capitalize())
@@ -242,11 +260,14 @@ def simulate():
     dt = 0.0001
     t = 0
     count = 0
+    print(scene.lights)
     while True:
         rate(5000)
         count += 1
         if count % 13 == 0:
             cameracheck()
+        if count % 100 == 0:
+            planetRotate(planets, planetobjects)
         calcForces(planetobjects)
         updateMomenta(planetobjects)
         updatePositions(planetobjects)
