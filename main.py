@@ -34,9 +34,9 @@ def initializeSolarSystem():
     thick = 0.001
     rad = 0.15
     twopac = 0.1
-    saturn = []
+    saturnobjects = []
     saturnbody = sphere(pos=vector(0,0,0), radius=0.08)
-    saturn.append(saturnbody)
+    saturnobjects.append(saturnbody)
     inner = False
     for i in range(1,35):
         if i == 15:
@@ -44,10 +44,10 @@ def initializeSolarSystem():
             twopac = 0.2
             inner = True
         if inner == False:
-            saturn.append(ring(pos=vector(0,0,0), axis=vector(0.4,1,0), radius = rad-(r.uniform(0.001, 0.002)*i), thickness = thick, opacity = twopac))
+            saturnobjects.append(ring(pos=vector(0,0,0), axis=vector(0.4,1,0), radius = rad-(r.uniform(0.001, 0.002)*i), thickness = thick, opacity = twopac))
         elif inner == True:
-            saturn.append(ring(pos=vector(0,0,0), axis=vector(0.4,1,0), radius = rad-(r.uniform(0.001, 0.0015)*i), thickness = thick, opacity = twopac))
-    saturn = compoundPlanet("saturn",0,0,8.2,saturn,10,60,0,0, 0, False)
+            saturnobjects.append(ring(pos=vector(0,0,0), axis=vector(0.4,1,0), radius = rad-(r.uniform(0.001, 0.0015)*i), thickness = thick, opacity = twopac))
+    saturn = compoundPlanet("saturn",0,0,8.2,saturnobjects,10,60,0,0, 0, False)
     uranus = Planet("uranus",0,0,14,0.05, 7 ,1,5,0,0, False)
     neptune = Planet("neptune",0,0,21,0.04, 8 ,1.3, 5.5,0,0, False)
     planetobjects = [sun, mercury, venus, earth, mars, jupiter, saturn, uranus, neptune]
@@ -106,21 +106,21 @@ class Planet(object):
     # Laying out the foundations
     def __init__(self,name, posx, posy, posz, radius, texturenum, mass, m1, m2, m3, emissive):
         global planets
-        textures = ['https://i.imgur.com/yuVrjef.jpg', 'https://i.imgur.com/Y9KABlp.png', 'https://i.imgur.com/MFGRSTV.jpg', 
+        textures = ['https://i.imgur.com/rhDIk6x.jpeg', 'https://i.imgur.com/Y9KABlp.png', 'https://i.imgur.com/MFGRSTV.jpg', 
                     'https://i.imgur.com/Klu4RHH.jpg', 'https://i.imgur.com/6OWHL0V.jpg', 'https://i.imgur.com/z0QGLr4.jpg', 
                     'https://i.imgur.com/ayz5Vrc.jpg', 'https://i.imgur.com/kin15B0.jpg', 'https://i.imgur.com/LvfbPVm.jpg']
         self.name = name
         self.posx, self.posy, self.posz = posx, posy, posz
         self.position = vector(posx,posy,posz)
-        self.radius = radius
+        self.radius = radius 
         self.texture = textures[texturenum]
         self.mass = mass
         self.momentum = vector(m1,m2,m3)
         self.force = vector(0,0,0)
         self.emissive = emissive
         planets["planet{0}".format(name)] = sphere(pos=self.position, radius=self.radius, 
-                                                   texture = self.texture, momentum = self.momentum, 
-                                                   mass = self.mass, make_trail = False, retain = 1000, emissive = self.emissive)
+                                                   texture = self.texture, momentum = self.momentum,
+                                                   mass = self.mass, make_trail = False, retain = 1000, emissive = self.emissive, shininess = False)
         
     def getMass(self):
         return planets[f"planet{self.name}"].mass
@@ -163,7 +163,7 @@ class compoundPlanet(Planet):
         self.texture = textures[texture]
         self.emissive = emissive
         planets["planet{0}".format(name)] = compound(self.objects, pos=self.position, momentum = self.momentum, 
-                                                     mass = self.mass, texture=self.texture, make_trail = False, retain = 1000, emissive = self.emissive)
+                                                     mass = self.mass, texture=self.texture, make_trail = False, retain = 1000, emissive = self.emissive, shininess = False)
         
     def getRadius(self):
         return 1
@@ -183,11 +183,11 @@ def cameracheck():
             center = vector(planets[planet].pos)
             galaxy.pos = vector(planets[planet].pos)
     zoomA = mag(center - scene.camera.pos)
-    zoomB = mag(center - scene.camera.pos) + 2
+    zoomB = mag(center - scene.camera.pos) + 1.5
     for item in np.linspace(zoomA, zoomB, num=40):              # The use of numpy's linspace feature
         galaxy.radius = item                                    # allows for smoothed radius adjustment
  
-# The gravitational force equation, takes in two planet objects and returns the
+# The gravitational force equation, takes in two planet objects and returns
 # resultant force vector, taking into account the planet's mass and position
 def orbitcalc(planet1, planet2):
     GRAV = 1
@@ -260,7 +260,6 @@ def simulate():
     dt = 0.0001
     t = 0
     count = 0
-    print(scene.lights)
     while True:
         rate(5000)
         count += 1
@@ -285,15 +284,17 @@ main()
 
 """ 
 # Notes/Targets:
-# - Implement moons
-# - Make planets spin
-# - Zoom speed limit?
-# - Fix orbits? Make them look more realistic
-# - Replace basic colours with functional textures:
-#    - moon = https://i.imgur.com/ux1dfdt.png
+#
 # - Gravity and planet mass sliders
 # - Planet placing system
 # - Planet deletion system
 # - Start simulation button
 # - Information system
+#
+#   Maybe?
+#       - Implement moon?
+#           - moon = https://i.imgur.com/ux1dfdt.png
+#       - Zoom speed limit?
+#       - Fix orbits? Make them look more realistic
+#       - Reset button
  """
