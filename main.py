@@ -25,12 +25,12 @@ currenttrack = ''
 # Creating the planets for the 'regular' solar system mode
 def initializeSolarSystem():
     global planetobjects
-    sun = Planet("sun",0,0,0,0.15, 0 ,333,0,0,1000, True)
-    mercury = Planet("mercury",0,0,0.387,0.009, 1 ,0.0553,1.59,0,0, False)
-    venus = Planet("venus",0,0,0.723,0.025, 2 ,0.815,17.7,0,0, False)
-    earth = Planet("earth",0,0,1.2,0.034, 3 ,1,17.1,0,0, False)
-    mars = Planet("mars",0,0,1.62,0.028, 4 ,0.8,11.6853,0,0, False)
-    jupiter = Planet("jupiter",0,0,5,0.04, 5 ,10.4,87,0,0, False)
+    sun = Planet("sun",0,0,0,0.15, 0 ,333,0,0,1000, True, False)
+    mercury = Planet("mercury",0,0,0.387,0.009, 1 ,0.0553,1.59,0,0, False, False)
+    venus = Planet("venus",0,0,0.723,0.025, 2 ,0.815,17.7,0,0, False, False)
+    earth = Planet("earth",0,0,1.2,0.034, 3 ,1,17.1,0,0, False, False)
+    mars = Planet("mars",0,0,1.62,0.028, 4 ,0.8,11.6853,0,0, False, False)
+    jupiter = Planet("jupiter",0,0,5,0.04, 5 ,10.4,87,0,0, False, False)
     thick = 0.001
     rad = 0.15
     twopac = 0.1
@@ -47,20 +47,89 @@ def initializeSolarSystem():
             saturnobjects.append(ring(pos=vector(0,0,0), axis=vector(0.4,1,0), radius = rad-(r.uniform(0.001, 0.002)*i), thickness = thick, opacity = twopac))
         elif inner == True:
             saturnobjects.append(ring(pos=vector(0,0,0), axis=vector(0.4,1,0), radius = rad-(r.uniform(0.001, 0.0015)*i), thickness = thick, opacity = twopac))
-    saturn = compoundPlanet("saturn",0,0,8.2,saturnobjects,10,60,0,0, 0, False)
-    uranus = Planet("uranus",0,0,14,0.05, 7 ,1,5,0,0, False)
-    neptune = Planet("neptune",0,0,21,0.04, 8 ,1.3, 5.5,0,0, False)
+    saturn = compoundPlanet("saturn",0,0,8.2,saturnobjects,10,60,0,0, 0, False, False)
+    uranus = Planet("uranus",0,0,14,0.05, 7 ,1,5,0,0, False, False)
+    neptune = Planet("neptune",0,0,21,0.04, 8 ,1.3, 5.5,0,0, False, False)
     planetobjects = [sun, mercury, venus, earth, mars, jupiter, saturn, uranus, neptune]
     # Setting up the camera so that it follows the sun
     # through space instead of staying focussed on (0,0,0)
     scene.camera.follow(planets["planetsun"])
     scene.lights = []
     local_light(pos=vector(0,0,0))
- 
-# Creating the environment suitable for the 'sandbox' mode   
-def initializeSandbox():
-    print("sandbox")
+
+# This function is called when the user presses the 'Place Planet' button which appears
+# upon selection of the sandbox mode.
+def placePlanet():
+    global planetobjects
+    global num
+    global names
+    normVec = scene.camera.pos/mag(scene.camera.pos)
+    distFromCamera = mag(scene.camera.pos) - mag(normVec)
+    startVal = 1                                                    # This section of the function utilizes 3-Dimensional
+    while distFromCamera > 2:                                       # vector maths and coordinate geometry to find the position
+        startVal += 0.1                                             # just infront of the user's view
+        planetPos = startVal*normVec
+        distFromCamera = mag(scene.camera.pos) - mag(planetPos)
+    try:
+        if num == 5:
+            thick = 0.001
+            rad = 0.15
+            twopac = 0.1
+            saturnobjects = []
+            saturnbody = sphere(pos=vector(0,0,0), radius=0.08)
+            saturnobjects.append(saturnbody)
+            inner = False
+            for i in range(1,35):
+                if i == 15:
+                    rad -= 0.01
+                    twopac = 0.2
+                    inner = True
+                if inner == False:
+                    saturnobjects.append(ring(pos=vector(0,0,0), axis=vector(0.4,1,0), radius = rad-(r.uniform(0.001, 0.002)*i), thickness = thick, opacity = twopac))
+                elif inner == True:
+                    saturnobjects.append(ring(pos=vector(0,0,0), axis=vector(0.4,1,0), radius = rad-(r.uniform(0.001, 0.0015)*i), thickness = thick, opacity = twopac))
+            names[num] = compoundPlanet(names[num],planetPos.x,planetPos.y,planetPos.z,saturnobjects,10,60,0,0, 0, False, False)
+        else:   
+            names[num] = Planet(names[num],planetPos.x,planetPos.y,planetPos.z,0.09, num+1 ,1,1.59,0,0, False, True)
+        planetobjects.append(names[num])
+        num += 1
+    except:
+        print('Too close')
+
+def deletePlanet():
+    print('delete')
     pass
+
+def startSim():
+    global start
+    start = True
+    return start
+
+ 
+# Creating the environment suitable for the 'sandbox' mode
+num = 0
+def initializeSandbox():
+    global start
+    global planetobjects
+    global num
+    global names
+    start = False
+    names = ['mercury', 'venus', 'earth', 'mars', 'jupiter', 'saturn', 'uranus', 'neptune']
+    placeButton = button(bind=placePlanet, text='Place Planet')
+    deleteButton = button(bind=deletePlanet, text='Delete Planet')
+    startSimulation = button(bind=startSim, text='Start Simulation')
+    sun = Planet("sun",0,0,0,0.55, 0 ,333,0,0,1000, True, False)
+    planetobjects.append(sun)
+    scene.camera.follow(planets["planetsun"])
+    scene.lights = []
+    local_light(pos=vector(0,0,0))
+    while start == False:
+        pass
+    else:
+        placeButton.delete()
+        deleteButton.delete()
+        startSimulation.delete()
+        return True
 
 
 # This is the first thing the students will see when they open the program.
@@ -104,7 +173,7 @@ def welcome():
 # position to mass to momentum that the user can modify
 class Planet(object):
     # Laying out the foundations
-    def __init__(self,name, posx, posy, posz, radius, texturenum, mass, m1, m2, m3, emissive):
+    def __init__(self,name, posx, posy, posz, radius, texturenum, mass, m1, m2, m3, emissive, trail):
         global planets
         textures = ['https://i.imgur.com/rhDIk6x.jpeg', 'https://i.imgur.com/Y9KABlp.png', 'https://i.imgur.com/MFGRSTV.jpg', 
                     'https://i.imgur.com/Klu4RHH.jpg', 'https://i.imgur.com/6OWHL0V.jpg', 'https://i.imgur.com/z0QGLr4.jpg', 
@@ -120,7 +189,7 @@ class Planet(object):
         self.emissive = emissive
         planets["planet{0}".format(name)] = sphere(pos=self.position, radius=self.radius, 
                                                    texture = self.texture, momentum = self.momentum,
-                                                   mass = self.mass, make_trail = False, retain = 1000, emissive = self.emissive, shininess = False)
+                                                   mass = self.mass, make_trail = trail, retain = 50, emissive = self.emissive, shininess = False)
         
     def getMass(self):
         return planets[f"planet{self.name}"].mass
@@ -151,7 +220,7 @@ class Planet(object):
     
     
 class compoundPlanet(Planet):
-    def __init__(self,name, posx, posy, posz, objects, mass, m1, m2, m3, texture, emissive):
+    def __init__(self,name, posx, posy, posz, objects, mass, m1, m2, m3, texture, emissive, trail):
         textures = ['https://i.imgur.com/ayz5Vrc.jpg']
         self.name = name
         self.posx, self.posy, self.posz = posx, posy, posz
@@ -163,7 +232,7 @@ class compoundPlanet(Planet):
         self.texture = textures[texture]
         self.emissive = emissive
         planets["planet{0}".format(name)] = compound(self.objects, pos=self.position, momentum = self.momentum, 
-                                                     mass = self.mass, texture=self.texture, make_trail = False, retain = 1000, emissive = self.emissive, shininess = False)
+                                                     mass = self.mass, texture=self.texture, make_trail = trail, retain = 1000, emissive = self.emissive, shininess = False)
         
     def getRadius(self):
         return 1
@@ -261,7 +330,7 @@ def simulate():
     t = 0
     count = 0
     while True:
-        rate(5000)
+        rate(4000)
         count += 1
         if count % 13 == 0:
             cameracheck()
@@ -273,22 +342,24 @@ def simulate():
         t += dt
 
 def main():
+    global start
     welcome()
     if modechoice == 0:
         initializeSolarSystem()
+        simulate()
     elif modechoice == 1:
         initializeSandbox()
-    simulate()
-
+        while start == False:
+            pass
+        else:
+            simulate()
 main()
 
 """ 
 # Notes/Targets:
 #
-# - Gravity and planet mass sliders
-# - Planet placing system
+# - Gravity and planet mass sliders, Maybe size?
 # - Planet deletion system
-# - Start simulation button
 # - Information system
 #
 #   Maybe?
