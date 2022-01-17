@@ -51,18 +51,15 @@ def initializeSolarSystem():
     uranus = Planet("uranus",0,0,14,0.05, 7 ,1,5,0,0, False, False)
     neptune = Planet("neptune",0,0,21,0.04, 8 ,1.3, 5.5,0,0, False, False)
     planetobjects = [sun, mercury, venus, earth, mars, jupiter, saturn, uranus, neptune]
-    # Setting up the camera so that it follows the sun
-    # through space instead of staying focussed on (0,0,0)
-    scene.camera.follow(planets["planetsun"])
-    scene.lights = []
+    scene.camera.follow(planets["planetsun"])                       # Setting up the camera so that it follows the sun
+    scene.lights = []                                               # through space instead of staying focussed on (0,0,0)
     local_light(pos=vector(0,0,0))
 
 # This function is called when the user presses the 'Place Planet' button which appears
 # upon selection of the sandbox mode.
+planetNames = ['mercury', 'venus', 'earth', 'mars', 'jupiter', 'saturn', 'uranus', 'neptune']
 def placePlanet():
-    global planetobjects
     global num
-    global names
     normVec = scene.camera.pos/mag(scene.camera.pos)
     distFromCamera = mag(scene.camera.pos) - mag(normVec)
     startVal = 1                                                    # This section of the function utilizes 3-Dimensional
@@ -71,7 +68,8 @@ def placePlanet():
         planetPos = startVal*normVec
         distFromCamera = mag(scene.camera.pos) - mag(planetPos)
     try:
-        if num == 5:
+        currentName = planetNames[num]
+        if num == 5:                                                # Exception for saturn (need to create rings)
             thick = 0.001
             rad = 0.15
             twopac = 0.1
@@ -88,33 +86,39 @@ def placePlanet():
                     saturnobjects.append(ring(pos=vector(0,0,0), axis=vector(0.4,1,0), radius = rad-(r.uniform(0.001, 0.002)*i), thickness = thick, opacity = twopac))
                 elif inner == True:
                     saturnobjects.append(ring(pos=vector(0,0,0), axis=vector(0.4,1,0), radius = rad-(r.uniform(0.001, 0.0015)*i), thickness = thick, opacity = twopac))
-            names[num] = compoundPlanet(names[num],planetPos.x,planetPos.y,planetPos.z,saturnobjects,10,60,0,0, 0, False, False)
+            currentName = compoundPlanet(planetNames[num],planetPos.x,planetPos.y,planetPos.z,saturnobjects,10,60,0,0, 0, False, False)
         else:   
-            names[num] = Planet(names[num],planetPos.x,planetPos.y,planetPos.z,0.09, num+1 ,1,1.59,0,0, False, True)
-        planetobjects.append(names[num])
+            currentName = Planet(planetNames[num],planetPos.x,planetPos.y,planetPos.z,0.09, num+1 ,1,1.59,0,0, False, True)
+        planetobjects.append(currentName)
         num += 1
     except:
         print('Too close')
 
+# Acts like an undo button in the sandbox mode. The user can click a button
+# that calls this method and the last planet they placed will be removed ready
+# for reposition.
 def deletePlanet():
-    print('delete')
-    pass
+    global num
+    if num > 0:
+        planetobjects[len(planetobjects)-1].delete()
+        planetobjects.pop()
+        num -= 1
+    else:
+        pass
 
+# The method that is called when the user clicks the 'Start Simulation' button.
+# It updated the start variable so that the planet positions are finalized and
+# the simulation begins. 
+start = False
 def startSim():
     global start
     start = True
-    return start
 
  
 # Creating the environment suitable for the 'sandbox' mode
 num = 0
 def initializeSandbox():
-    global start
     global planetobjects
-    global num
-    global names
-    start = False
-    names = ['mercury', 'venus', 'earth', 'mars', 'jupiter', 'saturn', 'uranus', 'neptune']
     placeButton = button(bind=placePlanet, text='Place Planet')
     deleteButton = button(bind=deletePlanet, text='Delete Planet')
     startSimulation = button(bind=startSim, text='Start Simulation')
@@ -217,6 +221,11 @@ class Planet(object):
     
     def getName(self):
         return self.name
+    
+    def delete(self):
+        planets[f"planet{self.name}"].visible = False
+        del planets[f"planet{self.name}"]
+    
     
     
 class compoundPlanet(Planet):
@@ -359,7 +368,6 @@ main()
 # Notes/Targets:
 #
 # - Gravity and planet mass sliders, Maybe size?
-# - Planet deletion system
 # - Information system
 #
 #   Maybe?
