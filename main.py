@@ -8,15 +8,12 @@ import random as r
 
 # These globals will be important in order to create a dictionary containing
 # all the planet objects
-global planets
-global planetobjects
-global modechoice
-global galaxy
-global currenttrack
+scene = canvas(align='left')
 scene.autoscale = False
-scene.width = '1280'
+scene.width = '1000'
 scene.height = '720'
 galaxy = sphere(pos=vector(0,0,0), radius = 25, texture='https://i.imgur.com/2YLRldk.png', shininess = 0)
+planetInformation = canvas(width=400, height=720, align='left')
 planets = {}
 planetobjects = []
 modechoice = 0
@@ -25,6 +22,7 @@ currenttrack = ''
 # Creating the planets for the 'regular' solar system mode
 def initializeSolarSystem():
     global planetobjects
+    scene.select()
     sun = Planet("sun",0,0,0,0.15, 0 ,333,0,0,1000, True, False)
     mercury = Planet("mercury",0,0,0.387,0.009, 1 ,0.0553,1.59,0,0, False, False)
     venus = Planet("venus",0,0,0.723,0.025, 2 ,0.815,17.7,0,0, False, False)
@@ -54,6 +52,11 @@ def initializeSolarSystem():
     scene.camera.follow(planets["planetsun"])                       # Setting up the camera so that it follows the sun
     scene.lights = []                                               # through space instead of staying focussed on (0,0,0)
     local_light(pos=vector(0,0,0))
+    planetInformation.camera.pos = vector(0,0,10)
+    planetInformation.userspin = False
+    planetInformation.userzoom = False
+    planetInformation.select()
+    text(scene=planetInformation, text='Change information by selecting a new planet', pos=vector(-13,27,-15))
 
 # This function is called when the user presses the 'Place Planet' button which appears
 # upon selection of the sandbox mode.
@@ -86,9 +89,9 @@ def placePlanet():
                     saturnobjects.append(ring(pos=vector(0,0,0), axis=vector(0.4,1,0), radius = rad-(r.uniform(0.001, 0.002)*i), thickness = thick, opacity = twopac))
                 elif inner == True:
                     saturnobjects.append(ring(pos=vector(0,0,0), axis=vector(0.4,1,0), radius = rad-(r.uniform(0.001, 0.0015)*i), thickness = thick, opacity = twopac))
-            currentName = compoundPlanet(planetNames[num],planetPos.x,planetPos.y,planetPos.z,saturnobjects,10,60,0,0, 0, False, False)
+            currentName = compoundPlanet(planetNames[num],planetPos.x,planetPos.y,planetPos.z,saturnobjects,10,60,0,0, 0, False, False, False)
         else:   
-            currentName = Planet(planetNames[num],planetPos.x,planetPos.y,planetPos.z,0.09, num+1 ,1,1.59,0,0, False, True)
+            currentName = Planet(planetNames[num],planetPos.x,planetPos.y,planetPos.z,0.09, num+1 ,1,1.59,0,0, False, True, False)
         planetobjects.append(currentName)
         num += 1
     except:
@@ -114,14 +117,18 @@ def startSim():
     global start
     start = True
 
+def updateMass(mass):
+    planetobjects[len(planetobjects)-1].setMass(mass.value)
  
 # Creating the environment suitable for the 'sandbox' mode
 num = 0
 def initializeSandbox():
     global planetobjects
+    planetInformation.delete()
     placeButton = button(bind=placePlanet, text='Place Planet')
     deleteButton = button(bind=deletePlanet, text='Delete Planet')
     startSimulation = button(bind=startSim, text='Start Simulation')
+    massSlider = slider(min = 0.001, max = 30, value = 1, length = 300, bind=updateMass, right=15)
     sun = Planet("sun",0,0,0,0.55, 0 ,333,0,0,1000, True, False)
     planetobjects.append(sun)
     scene.camera.follow(planets["planetsun"])
@@ -133,6 +140,7 @@ def initializeSandbox():
         placeButton.delete()
         deleteButton.delete()
         startSimulation.delete()
+        massSlider.delete()
         return True
 
 
@@ -192,11 +200,14 @@ class Planet(object):
         self.force = vector(0,0,0)
         self.emissive = emissive
         planets["planet{0}".format(name)] = sphere(pos=self.position, radius=self.radius, 
-                                                   texture = self.texture, momentum = self.momentum,
-                                                   mass = self.mass, make_trail = trail, retain = 50, emissive = self.emissive, shininess = False)
-        
+                                                texture = self.texture, momentum = self.momentum,
+                                                mass = self.mass, make_trail = trail, retain = 50, emissive = self.emissive, shininess = False)
+            
     def getMass(self):
         return planets[f"planet{self.name}"].mass
+    
+    def setMass(self, newMass):
+        planets[f"planet{self.name}"].mass = newMass
     
     def getPos(self):
         return planets[f"planet{self.name}"].pos
@@ -226,10 +237,13 @@ class Planet(object):
         planets[f"planet{self.name}"].visible = False
         del planets[f"planet{self.name}"]
     
-    
-    
+# A child class of Planet. This exists to handle the planet Saturn, the way Saturn
+# is created in this program involves multiple objects instead of just one sphere.
+# This calls for use of the 'compound' object rather than the 'sphere' object in Vpython.
+# However the standard 'Planet' class only constructs sphere objects, hence the need for
+# the 'compoundPlanet' child class.
 class compoundPlanet(Planet):
-    def __init__(self,name, posx, posy, posz, objects, mass, m1, m2, m3, texture, emissive, trail):
+    def __init__(self, name, posx, posy, posz, objects, mass, m1, m2, m3, texture, emissive, trail):
         textures = ['https://i.imgur.com/ayz5Vrc.jpg']
         self.name = name
         self.posx, self.posy, self.posz = posx, posy, posz
@@ -241,10 +255,44 @@ class compoundPlanet(Planet):
         self.texture = textures[texture]
         self.emissive = emissive
         planets["planet{0}".format(name)] = compound(self.objects, pos=self.position, momentum = self.momentum, 
-                                                     mass = self.mass, texture=self.texture, make_trail = trail, retain = 1000, emissive = self.emissive, shininess = False)
+                                                    mass = self.mass, texture=self.texture, make_trail = trail, retain = 1000, emissive = self.emissive, shininess = False)
         
     def getRadius(self):
         return 1
+
+# The following two classes are also children of the Planet class. Their purpose is to
+# act as a simplified version of its parent. These classes are used in the process of 
+# displaying the currently tracked planet. This is useful because in the information window
+# planets neither move nor vary in size. Creating a planet instance for this purpose would be
+# unnecessary and confusing.
+class displayPlanet(Planet):
+    def __init__(self, textureNum):
+        textures = ['https://i.imgur.com/rhDIk6x.jpeg', 'https://i.imgur.com/Y9KABlp.png', 'https://i.imgur.com/MFGRSTV.jpg', 
+                    'https://i.imgur.com/Klu4RHH.jpg', 'https://i.imgur.com/6OWHL0V.jpg', 'https://i.imgur.com/z0QGLr4.jpg', 
+                    'https://i.imgur.com/ayz5Vrc.jpg', 'https://i.imgur.com/kin15B0.jpg', 'https://i.imgur.com/LvfbPVm.jpg']
+        self.displayTexture = textures[textureNum]
+        self.displayedPlanet = sphere(pos=vector(0,0,0), radius=5, texture=self.displayTexture, shininess=False)
+    
+    def delete(self):
+        self.displayedPlanet.visible = False
+        del self.displayedPlanet
+        
+    def rotate(self, angle, axis):
+        self.displayedPlanet.rotate(angle=angle, axis=axis)
+        
+class displayCompoundPlanet(compoundPlanet):
+    def __init__(self, textureNum, objects):
+        textures = ['https://i.imgur.com/ayz5Vrc.jpg']
+        self.displayTexture = textures[textureNum]
+        self.objects = objects
+        self.displayedPlanet = compound(self.objects, pos=vector(0,0,0), radius=5, texture=self.displayTexture, axis=vector(0,0,0.2), shininess=False)
+        
+    def delete(self):
+        self.displayedPlanet.visible = False
+        del self.displayedPlanet
+        
+    def rotate(self, angle, axis):
+        self.displayedPlanet.rotate(angle=angle, axis=axis)
         
 
 # This method continously checks the distance of the camera from the center of
@@ -279,21 +327,49 @@ def orbitcalc(planet1, planet2):
 # The method called by the drop down menu created in the simulate() function
 # below. This method matches the user's selected planet with a list of the
 # planet objects and selects the correct planet to attatch the camera to.
+# It also handles the changing of the planet in the information window to the
+# right of the simulation.
 def changetrack(m):
     global planets
     global currenttrack
+    global current
     temp = list(planets.keys())
     for i in range (len(planets)):
         if i == m.index:
             currenttrack = temp[i]
             scene.camera.follow(planets[temp[i]])
+            if i == 6:
+                thick = 0.1
+                rad = 6
+                twopac = 0.1
+                saturnobjects = []
+                saturnbody = sphere(pos=vector(0,0,0), radius=4)
+                saturnobjects.append(saturnbody)
+                inner = False
+                for i in range(1,35):
+                    if i == 15:
+                        rad -= 0.4
+                        twopac = 2
+                        inner = True
+                    if inner == False:
+                        saturnobjects.append(ring(pos=vector(0,0,0), axis=vector(0.4,1,0), radius = rad-(r.uniform(0.1, 0.2)*i), thickness = thick, opacity = twopac))
+                    elif inner == True:
+                        saturnobjects.append(ring(pos=vector(0,0,0), axis=vector(0.4,1,0), radius = rad-(r.uniform(0.1, 0.15)*i), thickness = thick, opacity = twopac))
+                current.delete()
+                current = displayCompoundPlanet(0,saturnobjects)
+            else:
+                current.delete()
+                current = displayPlanet(i)
 
 # This handles the spinning animation of all planets, it takes into account the radius
 # of the planet and spins it at an appropriate speed respective to that.            
-def planetRotate(planets, planetobjects):
-    temp = list(planets.keys())
-    for i in range (len(planets)):
-        planets[temp[i]].rotate(angle=0.0006/((planetobjects[i].getRadius())), axis=vector(0,1,0))
+def planetRotate(planets, planetobjects, current):
+    if current == None:
+        temp = list(planets.keys())
+        for i in range (len(planets)):
+            planets[temp[i]].rotate(angle=0.0006/((planetobjects[i].getRadius())), axis=vector(0,1,0))
+    else:
+        current.rotate(angle=0.0006/0.09, axis=vector(0,1,0))
 
 # These 3 methods utilize an iterative approach to the physics equations
 # behind the simulation in order to save many lines of repetetive code in the
@@ -331,9 +407,11 @@ def updatePositions(planetobjects):
 def simulate():
     global planetobjects
     global planets
+    global current
     names = []
     for planet in planetobjects: 
         names.append(planet.getName().capitalize())
+    current = displayPlanet(0)
     menu(choices = names, pos = scene.title_anchor, bind=changetrack)
     dt = 0.0001
     t = 0
@@ -344,14 +422,15 @@ def simulate():
         if count % 13 == 0:
             cameracheck()
         if count % 100 == 0:
-            planetRotate(planets, planetobjects)
+            planetRotate(planets, planetobjects, None)
+            planetRotate(None, None, current)
         calcForces(planetobjects)
         updateMomenta(planetobjects)
         updatePositions(planetobjects)
         t += dt
 
+# Calling methods in the correct order.
 def main():
-    global start
     welcome()
     if modechoice == 0:
         initializeSolarSystem()
@@ -362,13 +441,16 @@ def main():
             pass
         else:
             simulate()
+
+# Starts the program.
 main()
 
 """ 
 # Notes/Targets:
 #
-# - Gravity and planet mass sliders, Maybe size?
+# - Planet mass slider, Maybe size?
 # - Information system
+# - Fix 'Too close' error message so it is visible in the GUI
 #
 #   Maybe?
 #       - Implement moon?
