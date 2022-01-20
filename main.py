@@ -89,9 +89,9 @@ def placePlanet():
                     saturnobjects.append(ring(pos=vector(0,0,0), axis=vector(0.4,1,0), radius = rad-(r.uniform(0.001, 0.002)*i), thickness = thick, opacity = twopac))
                 elif inner == True:
                     saturnobjects.append(ring(pos=vector(0,0,0), axis=vector(0.4,1,0), radius = rad-(r.uniform(0.001, 0.0015)*i), thickness = thick, opacity = twopac))
-            currentName = compoundPlanet(planetNames[num],planetPos.x,planetPos.y,planetPos.z,saturnobjects,10,60,0,0, 0, False, False, False)
+            currentName = compoundPlanet(planetNames[num],planetPos.x,planetPos.y,planetPos.z,saturnobjects,10,60,0,0, 0, False, False)
         else:   
-            currentName = Planet(planetNames[num],planetPos.x,planetPos.y,planetPos.z,0.09, num+1 ,1,1.59,0,0, False, True, False)
+            currentName = Planet(planetNames[num],planetPos.x,planetPos.y,planetPos.z,0.09, num+1 ,1,1.59,0,0, False, True)
         planetobjects.append(currentName)
         num += 1
     except:
@@ -124,7 +124,6 @@ def updateMass(mass):
 num = 0
 def initializeSandbox():
     global planetobjects
-    planetInformation.delete()
     placeButton = button(bind=placePlanet, text='Place Planet')
     deleteButton = button(bind=deletePlanet, text='Delete Planet')
     startSimulation = button(bind=startSim, text='Start Simulation')
@@ -338,28 +337,29 @@ def changetrack(m):
         if i == m.index:
             currenttrack = temp[i]
             scene.camera.follow(planets[temp[i]])
-            if i == 6:
-                thick = 0.1
-                rad = 6
-                twopac = 0.1
-                saturnobjects = []
-                saturnbody = sphere(pos=vector(0,0,0), radius=4)
-                saturnobjects.append(saturnbody)
-                inner = False
-                for i in range(1,35):
-                    if i == 15:
-                        rad -= 0.4
-                        twopac = 2
-                        inner = True
-                    if inner == False:
-                        saturnobjects.append(ring(pos=vector(0,0,0), axis=vector(0.4,1,0), radius = rad-(r.uniform(0.1, 0.2)*i), thickness = thick, opacity = twopac))
-                    elif inner == True:
-                        saturnobjects.append(ring(pos=vector(0,0,0), axis=vector(0.4,1,0), radius = rad-(r.uniform(0.1, 0.15)*i), thickness = thick, opacity = twopac))
-                current.delete()
-                current = displayCompoundPlanet(0,saturnobjects)
-            else:
-                current.delete()
-                current = displayPlanet(i)
+            if modechoice == 0:
+                if i == 6:
+                    thick = 0.1
+                    rad = 6
+                    twopac = 0.1
+                    saturnobjects = []
+                    saturnbody = sphere(pos=vector(0,0,0), radius=4)
+                    saturnobjects.append(saturnbody)
+                    inner = False
+                    for i in range(1,35):
+                        if i == 15:
+                            rad -= 0.4
+                            twopac = 2
+                            inner = True
+                        if inner == False:
+                            saturnobjects.append(ring(pos=vector(0,0,0), axis=vector(0.4,1,0), radius = rad-(r.uniform(0.1, 0.2)*i), thickness = thick, opacity = twopac))
+                        elif inner == True:
+                            saturnobjects.append(ring(pos=vector(0,0,0), axis=vector(0.4,1,0), radius = rad-(r.uniform(0.1, 0.15)*i), thickness = thick, opacity = twopac))
+                    current.delete()
+                    current = displayCompoundPlanet(0,saturnobjects)
+                else:
+                    current.delete()
+                    current = displayPlanet(i)
 
 # This handles the spinning animation of all planets, it takes into account the radius
 # of the planet and spins it at an appropriate speed respective to that.            
@@ -411,7 +411,8 @@ def simulate():
     names = []
     for planet in planetobjects: 
         names.append(planet.getName().capitalize())
-    current = displayPlanet(0)
+    if modechoice == 0:
+        current = displayPlanet(0)
     menu(choices = names, pos = scene.title_anchor, bind=changetrack)
     dt = 0.0001
     t = 0
@@ -423,7 +424,8 @@ def simulate():
             cameracheck()
         if count % 100 == 0:
             planetRotate(planets, planetobjects, None)
-            planetRotate(None, None, current)
+            if modechoice == 0:
+                planetRotate(None, None, current)
         calcForces(planetobjects)
         updateMomenta(planetobjects)
         updatePositions(planetobjects)
@@ -436,6 +438,8 @@ def main():
         initializeSolarSystem()
         simulate()
     elif modechoice == 1:
+        planetInformation.delete()
+        scene.select()
         initializeSandbox()
         while start == False:
             pass
