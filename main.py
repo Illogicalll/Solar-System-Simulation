@@ -277,7 +277,10 @@ class displayPlanet(Planet):
         del self.displayedPlanet
         
     def rotate(self, angle, axis):
-        self.displayedPlanet.rotate(angle=angle, axis=axis)
+        try:
+            self.displayedPlanet.rotate(angle=angle, axis=axis)
+        except:
+            pass
         
 class displayCompoundPlanet(compoundPlanet):
     def __init__(self, textureNum, objects):
@@ -332,7 +335,12 @@ def changetrack(m):
     global planets
     global currenttrack
     global current
+    global currentLabel
+    global planetTitle
     temp = list(planets.keys())
+    names = []
+    for planet in temp:
+        names.append(planet.replace("planet","").capitalize())
     for i in range (len(planets)):
         if i == m.index:
             currenttrack = temp[i]
@@ -356,10 +364,47 @@ def changetrack(m):
                         elif inner == True:
                             saturnobjects.append(ring(pos=vector(0,0,0), axis=vector(0.4,1,0), radius = rad-(r.uniform(0.1, 0.15)*i), thickness = thick, opacity = twopac))
                     current.delete()
+                    for obj in currentLabel:
+                        obj.visible = False
+                        del obj
                     current = displayCompoundPlanet(0,saturnobjects)
+                    currentLabel.append(label(pos=vector(2,3.5,0), 
+                                         text='1.4808 billion km from the Sun, \nit takes roughly 29 years to orbit it once', 
+                                         xoffset=20, yoffset=90))
+                    currentLabel.append(label(pos=vector(-2,-3.5,0), 
+                                         text='Gas giant,\nmostly hydrogen and helium', 
+                                         xoffset=-40, yoffset=-90))
+                    currentLabel.append(label(pos=vector(2.75,-3,0), 
+                                         text='Rings are only roughly\n10 metres thick', 
+                                         xoffset=38, yoffset=-40))
+                    currentLabel.append(label(pos=vector(-2.75,3,0), 
+                                         text="Diameter of 116,460 km,\nover 9 times Earth's", 
+                                         xoffset=-38, yoffset=40))
+                    planetTitle.visible = False
+                    del planetTitle
+                    planetTitle = text(scene=planetInformation, text=names[6], pos=vector(-1,-27,-15))
                 else:
+                    # The lists that hold the facts that are displayed when a planet is selected
+                    infos = [['Surface temperature of 5505°C,\nhottest at the core (roughly 15°C million)', "Accounts for 99.86"+'%'+" \nof the solar system's mass", "Over 1 million times\nthe size of Earth", "4.6 billion years old"],
+                             ['Closest planet to the Sun\nat 49.154 million km', 'Diameter of 4,879.4 km\n(smallest in the solar system)', 'Surface temperature of 430°C', 'Orbits the Sun every 88 days'],
+                             ['Takes longer to rotate on its axis\nthan to orbit the Sun', '108.2 million km from the Sun', 'Surface temperature of 475°C', 'Only planet in the solar system\nthat spins clockwise'],
+                             ['70'+'%'+'of the surface is water', '149.6 million km from the Sun', 'Axis is tilted by 23.5°', 'Diameter of 12,742 km'],
+                             ['227.9 million km from the Sun', 'Atmosphere is almost\nall Carbon Dioxide', 'Surface temperature of -60°C', 'Takes 687 days to orbit the Sun'],
+                             ['Fastest spinning planet in the system\n(spins once every 11 hours)', '79 Moons, most well known:\nIo, Europa, Ganymede, Callisto', 'Surface temperature of -108°C', '746.51 million km from the Sun'],
+                             [],
+                             ['Most tilted planet in the solar system\n(tilt of 98°)','Coldest planet in the solar system\n(-195°C)','2.871 billion km from the Sun', 'Mostly hydrogen and helium'],
+                             ['Most distant planet in the solar system\n(4.4747 billion km)', 'Smallest gas giant\nin the solar system (49,244 km)', 'Mostly hydrogen and helium', 'Takes 165 years to orbit the Sun']]
+                    positions = [[vector(3,4,0),10,90],[vector(-3,-4.05,0),-20,-90],[vector(3.75,-3.28,0),35,-40],[vector(-3.75,3.4,0),-28,40]]
                     current.delete()
+                    for obj in currentLabel:
+                        obj.visible = False
+                        del obj
                     current = displayPlanet(i)
+                    planetTitle.visible = False
+                    del planetTitle
+                    planetTitle = text(scene=planetInformation, text=names[i], pos=vector(-1,-27,-15))
+                    for j in range(4):
+                        currentLabel.append(label(pos=positions[j][0], text=infos[i][j], xoffset=positions[j][1], yoffset=positions[j][2]))
 
 # This handles the spinning animation of all planets, it takes into account the radius
 # of the planet and spins it at an appropriate speed respective to that.            
@@ -408,11 +453,16 @@ def simulate():
     global planetobjects
     global planets
     global current
+    global currentLabel
+    global planetTitle
     names = []
+    currentLabel = []
     for planet in planetobjects: 
         names.append(planet.getName().capitalize())
     if modechoice == 0:
         current = displayPlanet(0)
+        currentLabel.append(label(pos=vector(0,0,0), text=names[0], xoffset=40, yoffset=90))
+        planetTitle = text(scene=planetInformation, text='Sun', pos=vector(-1,-27,-15))
     menu(choices = names, pos = scene.title_anchor, bind=changetrack)
     dt = 0.0001
     t = 0
@@ -453,7 +503,6 @@ main()
 # Notes/Targets:
 #
 # - Planet mass slider, Maybe size?
-# - Information system
 # - Fix 'Too close' error message so it is visible in the GUI
 #
 #   Maybe?
