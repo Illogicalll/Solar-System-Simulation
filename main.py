@@ -1,3 +1,11 @@
+"""
+
+A-Level Computer Science NEA Project 2022
+
+'Simulating a Solar System' - Will Murphy
+
+"""
+
 # Importing necessary libraries
 from vpython import *
 import numpy as np
@@ -5,6 +13,7 @@ from ttkbootstrap import Style
 import tkinter as tk
 from tkinter import ttk
 import random as r
+import time
 
 # These globals will be important in order to create a dictionary containing
 # all the planet objects
@@ -19,7 +28,7 @@ planetobjects = []
 modechoice = 0
 currenttrack = ''
 
-# Creating the planets for the 'regular' solar system mode
+# Creating the planets for the 'Standard' solar system mode
 def initializeSolarSystem():
     global planetobjects
     scene.select()
@@ -58,6 +67,17 @@ def initializeSolarSystem():
     planetInformation.select()
     text(scene=planetInformation, text='Change information by selecting a new planet', pos=vector(-13,27,-15))
 
+# The function linked to the scaleSlider that appears upon selection of the
+# sandbox mode. Allows the user to change the size of the next planet they will place.
+scale = 0
+def updateScale(slider):
+    global scale
+    if slider != None:
+        scale = slider.value
+        st.text = round(slider.value,2)
+    else:
+        return scale
+
 # This function is called when the user presses the 'Place Planet' button which appears
 # upon selection of the sandbox mode.
 planetNames = ['mercury', 'venus', 'earth', 'mars', 'jupiter', 'saturn', 'uranus', 'neptune']
@@ -70,6 +90,7 @@ def placePlanet():
         startVal += 0.1                                             # just infront of the user's view
         planetPos = startVal*normVec
         distFromCamera = mag(scene.camera.pos) - mag(planetPos)
+    planetSize = updateScale(None)    
     try:
         currentName = planetNames[num]
         if num == 5:                                                # Exception for saturn (need to create rings)
@@ -91,11 +112,13 @@ def placePlanet():
                     saturnobjects.append(ring(pos=vector(0,0,0), axis=vector(0.4,1,0), radius = rad-(r.uniform(0.001, 0.0015)*i), thickness = thick, opacity = twopac))
             currentName = compoundPlanet(planetNames[num],planetPos.x,planetPos.y,planetPos.z,saturnobjects,10,60,0,0, 0, False, False)
         else:   
-            currentName = Planet(planetNames[num],planetPos.x,planetPos.y,planetPos.z,0.09, num+1 ,1,1.59,0,0, False, True)
+            currentName = Planet(planetNames[num],planetPos.x,planetPos.y,planetPos.z, planetSize, num+1 ,1,1.59,0,0, False, True)
         planetobjects.append(currentName)
         num += 1
     except:
-        print('Too close')
+        tc = wtext(pos=scene.caption_anchor,text='Too Close')
+        time.sleep(1)
+        tc.text = ''
 
 # Acts like an undo button in the sandbox mode. The user can click a button
 # that calls this method and the last planet they placed will be removed ready
@@ -119,15 +142,22 @@ def startSim():
 
 def updateMass(mass):
     planetobjects[len(planetobjects)-1].setMass(mass.value)
- 
+    mt.text = '{:1.2f}'.format(mass.value)
+
 # Creating the environment suitable for the 'sandbox' mode
 num = 0
 def initializeSandbox():
-    global planetobjects
-    placeButton = button(bind=placePlanet, text='Place Planet')
-    deleteButton = button(bind=deletePlanet, text='Delete Planet')
-    startSimulation = button(bind=startSim, text='Start Simulation')
-    massSlider = slider(min = 0.001, max = 30, value = 1, length = 300, bind=updateMass, right=15)
+    global planetobjects, mt, st
+    placeButton = button(bind=placePlanet, text='Place Planet', background=color.orange)
+    deleteButton = button(bind=deletePlanet, text='Delete Planet', background=color.cyan)
+    startSimulation = button(bind=startSim, text='Start Simulation', background = color.orange)
+    scene.append_to_caption('Mass Slider:\n')
+    massSlider = slider(pos=scene.caption_anchor,min = 0.001, max = 30, value = 1, length = 300,top=10,bottom=30,bind=updateMass)
+    mt = wtext(pos=scene.caption_anchor,text=massSlider.value)
+    scene.append_to_caption('\n\nScale Slider:\n')
+    scaleSlider = slider(pos=scene.caption_anchor,min= 0.01, max=0.5, value=0.25, length=300 ,top=10, bottom=30,bind=updateScale)
+    st = wtext(pos=scene.caption_anchor,text=scaleSlider.value)
+    scene.append_to_caption('\n\n                         ')
     sun = Planet("sun",0,0,0,0.55, 0 ,333,0,0,1000, True, False)
     planetobjects.append(sun)
     scene.camera.follow(planets["planetsun"])
@@ -140,8 +170,9 @@ def initializeSandbox():
         deleteButton.delete()
         startSimulation.delete()
         massSlider.delete()
+        scaleSlider.delete()
+        scene.caption = ''
         return True
-
 
 # This is the first thing the students will see when they open the program.
 # The purpose of this method is to display a simple GUI for the students to
@@ -156,7 +187,7 @@ def welcome():
             self.welcome.pack(fill='both', expand='yes')
             
     # This class creates the content that is then applied to the above window.
-    # The user is presented with two options, 'Regular' (Meaning a simulation of the
+    # The user is presented with two options, 'Standard' (Meaning a simulation of the
     # real solar system) or 'Sandbox' (Granting the user the ability to create their
     # own system).
     class WelcomeScreen(ttk.Frame):
@@ -167,7 +198,7 @@ def welcome():
             ttk.Label(master=self, text='Welcome to Python Solar System Simulation v0.1', width=35).grid(columnspan=4, pady=5)
             for i, label in enumerate(['Please Select Mode']):
                 ttk.Label(master=self, text=label.title()).grid(row=i + 1, column=2, sticky='ew', pady=10, padx=(0, 10))
-            self.regular = ttk.Button(master=self, text='Regular',command=self.regularmode).grid(row=4, column=1, sticky=tk.EW, pady=10, padx=(0, 10))
+            self.regular = ttk.Button(master=self, text='Standard',command=self.regularmode).grid(row=4, column=1, sticky=tk.EW, pady=10, padx=(0, 10))
             self.sandbox = ttk.Button(master=self, text='Sandbox', command=self.sandboxmode).grid(row=4, column=3, sticky=tk.EW, pady=10, padx=(0, 3))
         
         def regularmode(self):
@@ -332,11 +363,7 @@ def orbitcalc(planet1, planet2):
 # It also handles the changing of the planet in the information window to the
 # right of the simulation.
 def changetrack(m):
-    global planets
-    global currenttrack
-    global current
-    global currentLabel
-    global planetTitle
+    global planets, currenttrack, current, currentLabel, planetTitle
     temp = list(planets.keys())
     names = []
     for planet in temp:
@@ -388,7 +415,7 @@ def changetrack(m):
                     infos = [['Surface temperature of 5505°C,\nhottest at the core (roughly 15°C million)', "Accounts for 99.86"+'%'+" \nof the solar system's mass", "Over 1 million times\nthe size of Earth", "4.6 billion years old"],
                              ['Closest planet to the Sun\nat 49.154 million km', 'Diameter of 4,879.4 km\n(smallest in the solar system)', 'Surface temperature of 430°C', 'Orbits the Sun every 88 days'],
                              ['Takes longer to rotate on its axis\nthan to orbit the Sun', '108.2 million km from the Sun', 'Surface temperature of 475°C', 'Only planet in the solar system\nthat spins clockwise'],
-                             ['70'+'%'+'of the surface is water', '149.6 million km from the Sun', 'Axis is tilted by 23.5°', 'Diameter of 12,742 km'],
+                             ['70'+'%'+' of the surface is water', '149.6 million km from the Sun', 'Axis is tilted by 23.5°', 'Diameter of 12,742 km'],
                              ['227.9 million km from the Sun', 'Atmosphere is almost\nall Carbon Dioxide', 'Surface temperature of -60°C', 'Takes 687 days to orbit the Sun'],
                              ['Fastest spinning planet in the system\n(spins once every 11 hours)', '79 Moons, most well known:\nIo, Europa, Ganymede, Callisto', 'Surface temperature of -108°C', '746.51 million km from the Sun'],
                              [],
@@ -450,18 +477,14 @@ def updatePositions(planetobjects):
 # the speed of the simulation can be adjusted within the rate() function. A higher value
 # equates to a higher simulation speed.
 def simulate():
-    global planetobjects
-    global planets
-    global current
-    global currentLabel
-    global planetTitle
+    global planetobjects, planets, current, currentLabel, planetTitle
     names = []
     currentLabel = []
     for planet in planetobjects: 
         names.append(planet.getName().capitalize())
     if modechoice == 0:
         current = displayPlanet(0)
-        currentLabel.append(label(pos=vector(0,0,0), text=names[0], xoffset=40, yoffset=90))
+        currentLabel.append(label(pos=vector(0,0,0), text='Information Will Appear Here', xoffset=40, yoffset=90))
         planetTitle = text(scene=planetInformation, text='Sun', pos=vector(-1,-27,-15))
     menu(choices = names, pos = scene.title_anchor, bind=changetrack)
     dt = 0.0001
@@ -498,17 +521,3 @@ def main():
 
 # Starts the program.
 main()
-
-""" 
-# Notes/Targets:
-#
-# - Planet mass slider, Maybe size?
-# - Fix 'Too close' error message so it is visible in the GUI
-#
-#   Maybe?
-#       - Implement moon?
-#           - moon = https://i.imgur.com/ux1dfdt.png
-#       - Zoom speed limit?
-#       - Fix orbits? Make them look more realistic
-#       - Reset button
- """
